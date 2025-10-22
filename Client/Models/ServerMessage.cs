@@ -8,8 +8,8 @@ namespace Client.DTO
 {
     public class ServerMessage
     {
-
         public string Action { get; set; } = string.Empty;
         public List<PlayerDTO>? Players { get; set; }
+        public List<Bullet>? Bullets { get; set; }
     }
 }

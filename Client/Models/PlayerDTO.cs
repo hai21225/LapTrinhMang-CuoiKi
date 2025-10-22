@@ -12,5 +12,6 @@ namespace Client.DTO
         public float X { get; set; }
         public float Y { get; set; }
         public float Rotation { get; set; }
+        public float Hp { get; set; }
     }
 }

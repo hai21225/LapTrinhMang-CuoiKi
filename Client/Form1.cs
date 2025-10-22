@@ -1,5 +1,6 @@
 ﻿using Client.DTO;
 using Client.Logic;
+using Client.Network;
 using System.Text.Json;
 using System.Windows.Forms;
 
@@ -36,6 +37,7 @@ namespace Client
             _service = new ClientGameService(_client);
 
             _service.OnPlayerUpdated += players => this.Invalidate();
+            _service.OnBulletUpdated += bullets => this.Invalidate();
             _client.ConnectServer();
 
             this.KeyPreview = true;
@@ -53,13 +55,10 @@ namespace Client
         {
             this.Invalidate();
         }
-
         private void Form1_FormClosed(object sender, FormClosedEventArgs e)
         {
             _client.DisconnectServer();
         }
-
-
         private void Form1_KeyDown(object sender, KeyEventArgs e)
         {
             _pressedKeys.Add(e.KeyCode);
@@ -68,7 +67,6 @@ namespace Client
         {
             _pressedKeys.Remove(e.KeyCode);
         }
-
         private void MoveTimer_Tick(object sender, EventArgs e)
         {
             if (_service.GetMyId == null) return;
@@ -101,25 +99,45 @@ namespace Client
 
             foreach (var p in _service.GetPlayers())
             {
-                float centerX = p.X + 16;
-                float centerY = p.Y + 16;
+                float imageWidth = _playerImage.Width;
+                float imageHeight = _playerImage.Height;
 
-                // Lưu ma trận gốc
+                float offsetX = imageWidth / 2f - 20f;
+                float offsetY = imageHeight / 2f;
+
+                float centerX = p.X + offsetX;
+                float centerY = p.Y + offsetY;
+
                 var matrix = g.Transform;
 
-                // Dịch đến tâm player rồi xoay
                 g.TranslateTransform(centerX, centerY);
-                g.RotateTransform(p.Rotation);  // hoặc _rotationAngle nếu là local player
+                g.RotateTransform(p.Rotation);
                 g.TranslateTransform(-centerX, -centerY);
 
-                // Vẽ player
-                g.DrawImage(_playerImage, p.X, p.Y, 32, 32);
-                g.DrawString($"ID: {p.Id}", this.Font, Brushes.White, p.X, p.Y - 15);
+                // sprite player
+                g.DrawImage(_playerImage, p.X, p.Y, imageWidth, imageHeight);
 
-                // Trả ma trận về gốc
+                // Vẽ viền hình chữ nhật quanh player (debug)
+                g.DrawRectangle(Pens.Red, p.X, p.Y, imageWidth, imageHeight);
+                // Vẽ tâm xoay
+                g.FillEllipse(Brushes.Blue, centerX - 2, centerY - 2, 4, 4);
+                // Vẽ HP
+                g.DrawString($"HP: {p.Hp}", this.Font, Brushes.White, p.X + imageWidth + 5, p.Y - 20);
+
                 g.Transform = matrix;
             }
+            foreach (var b in _service.GetBullets())
+            {
+                float bulletSize = 10f;
+                float bulletX = b.X - bulletSize / 2;
+                float bulletY = b.Y - bulletSize / 2;
+
+                g.FillEllipse(Brushes.Yellow, bulletX, bulletY, bulletSize, bulletSize);
+                //  (debug)
+                g.DrawEllipse(Pens.Red, bulletX, bulletY, bulletSize, bulletSize);
+            }
         }
+
 
 
         private void Form1_MouseMove(object sender, MouseEventArgs e)
@@ -127,13 +145,31 @@ namespace Client
             var me = _service.GetPlayers().FirstOrDefault(p => p.Id.ToString() == _service.GetMyId);
             if (me == null) return;
 
-            float dx = e.X - (me.X + 16);
-            float dy = e.Y - (me.Y + 16);
+            float dx = e.X - (me.X + _playerImage.Width/2-20f);
+            float dy = e.Y - (me.Y + _playerImage.Height/2);
 
             _rotation = (float)(Math.Atan2(dy, dx) * 180 / Math.PI);
 
             _service.SendRotation(_rotation);
             //this.Invalidate();
         }
+        private void MoveButtunDown(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+            {
+                var me = _service.GetPlayers().FirstOrDefault(p => p.Id.ToString() == _service.GetMyId);
+                if (me != null)
+                {
+                    Console.WriteLine(me.X); Console.WriteLine(me.Y);
+
+                    Console.WriteLine(me.X + _playerImage.Width / 2);
+                    Console.WriteLine(me.Y + _playerImage.Height / 2);
+                    //Console.WriteLine("checkk");
+                    //Console.WriteLine(_rotation + "   " + me.Rotation);
+                    _service.SendShoot(_rotation);
+                }
+            }
+        }
+
     }
 }

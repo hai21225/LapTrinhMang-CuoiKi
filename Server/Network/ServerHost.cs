@@ -16,12 +16,14 @@ namespace Server.Network
         private readonly int _port;
         private readonly List<ClientHandler> _clients = new List<ClientHandler>();
         private readonly PlayerManager _playerManager;
+        private readonly BulletManager _bulletManager;
 
-        public ServerHost (string ip, int port, PlayerManager playerManager)
+        public ServerHost (string ip, int port, PlayerManager playerManager, BulletManager bulletManager)
         {
             _ip = ip;
             _port = port;
             _playerManager = playerManager;
+            _bulletManager = bulletManager;
         }
 
         public async Task StartAsync()
@@ -33,12 +35,32 @@ namespace Server.Network
 
             Console.WriteLine("server dang chay tren port: " + _port);
 
+            _ = GameLoopAsync();
             while (true)
             {
                 Socket client = await listener.AcceptAsync();
-                var handler = new ClientHandler(client, this,_playerManager);
+                var handler = new ClientHandler(client, this,_playerManager,_bulletManager);// this 
                 _clients.Add(handler);
                 _ = handler.StartListeningAsync();
+            }
+        }
+
+        public async Task GameLoopAsync()
+        {
+            while (true)
+            {
+                _bulletManager.UpdateBullets();
+                Broadcast(new
+                {
+                    Action= "BULLETS",
+                    Bullets= _bulletManager.GetAllBullets()
+                });
+                Broadcast(new
+                {
+                    Action = "PLAYERS",
+                    Players = _playerManager.GetAllPlayer()
+                });
+                await Task.Delay(50);
             }
         }
 

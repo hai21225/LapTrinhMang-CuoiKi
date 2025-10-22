@@ -15,20 +15,24 @@ namespace Server.Network
         private readonly ServerHost _server;
         private readonly StringBuilder _recvBuffer = new StringBuilder();
         private readonly PlayerManager _playerManager;
+        private readonly BulletManager _bulletManager;
         public Player Player { get; private set; }
 
+
         private Random rand = new Random();
-        public ClientHandler (Socket client, ServerHost server,PlayerManager playerManager)
+        public ClientHandler (Socket client, ServerHost server,PlayerManager playerManager,BulletManager bulletManager)
         {
             _client = client;
             _server = server;
             _playerManager = playerManager;
+            _bulletManager = bulletManager;
 
             Player = new Player
             {
                 Id = Guid.NewGuid(),
-                X= rand.Next(0,500),
-                Y= rand.Next(0,500)
+                X = rand.Next(0, 500),
+                Y = rand.Next(0, 500),
+                Hp = 100f
             };
         }
         public async Task StartListeningAsync()
@@ -70,7 +74,6 @@ namespace Server.Network
             catch (Exception ex)
             {
                 Console.WriteLine($"client error: {ex.Message}");
-                Console.WriteLine($"Player: {Player}, PlayerManager: {_playerManager}, Server: {_server}, Client: {_client}, RecvBuffer: {_recvBuffer != null}");
 
             }
             finally
@@ -93,8 +96,8 @@ namespace Server.Network
                 {
                     case "MOVE":
                         string dir = doc.RootElement.GetProperty("Direction").GetString() ?? "";
-                       
-                        _playerManager.MovePlayer(Player.Id.ToString(), dir);
+                        string playerIdMove = doc.RootElement.GetProperty("PlayerId").GetString() ?? "";
+                        _playerManager.MovePlayer(playerIdMove, dir);
                         BroadcastPlayers();
                         break;
                     case "ROTATION":
@@ -103,8 +106,24 @@ namespace Server.Network
                         {
                             rotation = rotProp.GetSingle();
                         }
-                        _playerManager.RotationPlayer(Player.Id.ToString(), rotation);
+                        string playerIdRotation = doc.RootElement.GetProperty("PlayerId").GetString() ?? "";
+                        _playerManager.RotationPlayer(playerIdRotation, rotation);
                         BroadcastPlayers();
+                        break;
+                    case "SHOOT":
+                        float rotationShoot = 0f;
+                        if (doc.RootElement.TryGetProperty("RotationShoot", out var rotShotProp))
+                        {
+                            rotationShoot = rotShotProp.GetSingle();
+                        }
+                        string playerIdShoot = doc.RootElement.GetProperty("PlayerId").GetString() ?? "";
+                        var playerShoot=_playerManager.GetPlayer(playerIdShoot);
+                        if (playerShoot != null)
+                        {
+                            Console.WriteLine(rotationShoot);
+                            _bulletManager.CreateBullet(rotationShoot, playerShoot);
+                            BroadcastBullet();// done
+                        }
                         break;
                 }
             }
@@ -119,6 +138,14 @@ namespace Server.Network
             {
                 Action = "PLAYERS",
                 Players = _playerManager.GetAllPlayer()
+            });
+        }
+        private void BroadcastBullet()
+        {
+            _server.Broadcast(new
+            {
+                Action = "BULLETS",
+                Bullets = _bulletManager.GetAllBullets()
             });
         }
 

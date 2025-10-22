@@ -8,8 +8,8 @@ namespace Server.Game
 {
     public class PlayerManager
     {
-        private int _speed = 2;
-        private readonly Dictionary<string, Player> _players = new();
+        private int _speed = 10;
+        private readonly Dictionary<string, Player> _players = new(); // luu moi player kem id, de de dang loia khoi danh sach
 
         public void AddPlayer(Player player)
         {

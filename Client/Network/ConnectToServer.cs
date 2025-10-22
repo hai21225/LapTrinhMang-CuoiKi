@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using System.Text.Json;
 using Client.DTO;
 
-namespace Client
+namespace Client.Network
 {
     public class ConnectToServer
     {
@@ -16,12 +16,11 @@ namespace Client
 
         private Socket? _client;
         private CancellationTokenSource? _cts;
-
         private StringBuilder _recvBuffer = new StringBuilder();
 
         public event Action<string>? OnInitReceived; // event nhan tin tu server, sau do gui len winform dder xuw li
         public event Action<List<PlayerDTO>>? OnPlayersReceived;
-
+        public event Action<List<Bullet>>? OnBulletReceived;
 
         public bool IsConnected => _client != null && _client.Connected;
 
@@ -73,7 +72,7 @@ namespace Client
                                 continue;
 
                             string action = actionProp.GetString() ?? "";
-
+                            var message = JsonSerializer.Deserialize<ServerMessage>(line);
                             switch (action)
                             {
                                 case "INIT":
@@ -82,11 +81,18 @@ namespace Client
                                     break;
 
                                 case "PLAYERS":
-                                    var message = JsonSerializer.Deserialize<ServerMessage>(line);
+                                    // var message = JsonSerializer.Deserialize<ServerMessage>(line);
                                     if (message?.Players != null)
                                         OnPlayersReceived?.Invoke(message.Players);
                                     break;
-
+                                case "BULLETS":
+                                    //var msgBullet= JsonSerializer.Deserialize<ServerMessage>(line);
+                                    if (message?.Bullets != null)
+                                    {
+                                        //Console.WriteLine(message.Bullets.ToList());
+                                        OnBulletReceived?.Invoke(message.Bullets);
+                                    }
+                                    break;
                                 default:
                                     Console.WriteLine("Unknown action: " + action);
                                     break;

@@ -60,6 +60,7 @@
             FormClosed += Form1_FormClosed;
             Load += Form1_Load;
             KeyDown += Form1_KeyDown;
+            MouseDown += MoveButtunDown;
             MouseMove += Form1_MouseMove;
             ((System.ComponentModel.ISupportInitialize)player).EndInit();
             ResumeLayout(false);
