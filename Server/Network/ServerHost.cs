@@ -63,7 +63,6 @@ namespace Server.Network
                 await Task.Delay(50);
             }
         }
-
         public void Broadcast(object message)
         {
             string endline = "\n";

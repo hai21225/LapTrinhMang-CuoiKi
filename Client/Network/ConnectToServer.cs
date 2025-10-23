@@ -5,12 +5,14 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Text.Json;
-using Client.DTO;
+using Client.Models;
 
 namespace Client.Network
 {
     public class ConnectToServer
     {
+        private Image _playerImage = Properties.Resources.right;
+
         private const string _ipAddress = "127.0.0.1";
         private const int _port = 9000;
 
@@ -19,7 +21,7 @@ namespace Client.Network
         private StringBuilder _recvBuffer = new StringBuilder();
 
         public event Action<string>? OnInitReceived; // event nhan tin tu server, sau do gui len winform dder xuw li
-        public event Action<List<PlayerDTO>>? OnPlayersReceived;
+        public event Action<List<Player>>? OnPlayersReceived;
         public event Action<List<Bullet>>? OnBulletReceived;
 
         public bool IsConnected => _client != null && _client.Connected;
@@ -28,6 +30,7 @@ namespace Client.Network
         {
             IPEndPoint clientIp = new IPEndPoint(IPAddress.Parse(_ipAddress), _port);
             _client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+
             _client.Connect(clientIp);
             Console.WriteLine("ket noi toi server");
 
@@ -119,8 +122,6 @@ namespace Client.Network
                 _client?.Close();
             }
         }
-
-
         public void SendData(string message)
         {
             if (!IsConnected || _client == null) return;

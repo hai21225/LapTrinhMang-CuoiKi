@@ -36,9 +36,8 @@
             // 
             // _timer
             // 
-            _timer.Enabled = true;
-            _timer.Interval = 16;
-            _timer.Tick += Timer_Tick;
+            //_timer.Enabled = true;
+            //_timer.Interval = 16;
             // 
             // player
             // 

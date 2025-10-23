@@ -17,9 +17,8 @@ namespace Server.Network
         private readonly PlayerManager _playerManager;
         private readonly BulletManager _bulletManager;
         public Player Player { get; private set; }
-
-
         private Random rand = new Random();
+
         public ClientHandler (Socket client, ServerHost server,PlayerManager playerManager,BulletManager bulletManager)
         {
             _client = client;
@@ -35,6 +34,7 @@ namespace Server.Network
                 Hp = 100f
             };
         }
+
         public async Task StartListeningAsync()
         {
             try
@@ -85,42 +85,60 @@ namespace Server.Network
                 _client.Close();
             }
         }
+
         private void ProcessMessage(string json)
         {
             try
             {
                 using var doc = JsonDocument.Parse(json);
                 string action = doc.RootElement.GetProperty("Action").GetString() ?? "";
-
+                string playerId = doc.RootElement.GetProperty("PlayerId").GetString() ?? "";
                 switch (action)
                 {
+                    case "PROFILE":
+                        Console.WriteLine("check");
+                        float width = 0;
+                        float height= 0;
+                        if (doc.RootElement.TryGetProperty("Width", out var wProp))
+                        {
+                            width = wProp.GetSingle();
+                        }
+                        if (doc.RootElement.TryGetProperty("Height", out var hProp))
+                        {
+                            height = hProp.GetSingle();
+                        }
+                        _playerManager.Profile(playerId,width,height);
+                        break;
+
                     case "MOVE":
                         string dir = doc.RootElement.GetProperty("Direction").GetString() ?? "";
-                        string playerIdMove = doc.RootElement.GetProperty("PlayerId").GetString() ?? "";
-                        _playerManager.MovePlayer(playerIdMove, dir);
+                        //string playerIdMove = doc.RootElement.GetProperty("PlayerId").GetString() ?? "";
+                        _playerManager.MovePlayer(playerId, dir);
                         BroadcastPlayers();
                         break;
+
                     case "ROTATION":
                         float rotation = 0f;
                         if (doc.RootElement.TryGetProperty("Rotation", out var rotProp))
                         {
                             rotation = rotProp.GetSingle();
                         }
-                        string playerIdRotation = doc.RootElement.GetProperty("PlayerId").GetString() ?? "";
-                        _playerManager.RotationPlayer(playerIdRotation, rotation);
+                        //string playerIdRotation = doc.RootElement.GetProperty("PlayerId").GetString() ?? "";
+                        _playerManager.RotationPlayer(playerId, rotation);
                         BroadcastPlayers();
                         break;
+
                     case "SHOOT":
                         float rotationShoot = 0f;
                         if (doc.RootElement.TryGetProperty("RotationShoot", out var rotShotProp))
                         {
                             rotationShoot = rotShotProp.GetSingle();
                         }
-                        string playerIdShoot = doc.RootElement.GetProperty("PlayerId").GetString() ?? "";
-                        var playerShoot=_playerManager.GetPlayer(playerIdShoot);
+                        //string playerIdShoot = doc.RootElement.GetProperty("PlayerId").GetString() ?? "";
+                        var playerShoot=_playerManager.GetPlayer(playerId);
                         if (playerShoot != null)
                         {
-                            Console.WriteLine(rotationShoot);
+                            //Console.WriteLine(rotationShoot);
                             _bulletManager.CreateBullet(rotationShoot, playerShoot);
                             BroadcastBullet();// done
                         }
@@ -132,6 +150,7 @@ namespace Server.Network
                 Console.WriteLine($"Parse error: {ex.Message}");
             }
         }
+
         private void BroadcastPlayers()
         {
             _server.Broadcast(new
@@ -140,6 +159,7 @@ namespace Server.Network
                 Players = _playerManager.GetAllPlayer()
             });
         }
+
         private void BroadcastBullet()
         {
             _server.Broadcast(new

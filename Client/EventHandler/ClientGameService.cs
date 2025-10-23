@@ -1,4 +1,4 @@
-﻿using Client.DTO;
+﻿using Client.Models;
 using Client.Network;
 using System;
 using System.Collections.Generic;
@@ -13,12 +13,14 @@ namespace Client.Logic
     {
 
         private readonly ConnectToServer _connectToServer;
-        private List<PlayerDTO> _playerList = new();
+        private List<Player> _playerList = new();
         private List<Bullet> _bulletList = new();
         private string _myId = "";
 
-        public event Action<List<PlayerDTO>>? OnPlayerUpdated; 
+        public event Action<List<Player>>? OnPlayerUpdated; 
         public event Action <List<Bullet>>? OnBulletUpdated;
+        public event Action? OnInitCompleted;
+
         public ClientGameService(ConnectToServer connectToServer)
         {
             _connectToServer = connectToServer;
@@ -26,6 +28,7 @@ namespace Client.Logic
             {
                 _myId = id;
                 Console.WriteLine("my id: "+ _myId );
+                OnInitCompleted?.Invoke();
             };
 
             _connectToServer.OnPlayersReceived += players =>
@@ -64,8 +67,7 @@ namespace Client.Logic
             string json = JsonSerializer.Serialize(rotationMsg) + "\n";
             _connectToServer.SendData(json);
         }
-
-        public void SendShoot(float rotationShoot)
+        public void SendShoot(float rotationShoot, float pivotX,float pivotY)
         {
             if (string.IsNullOrEmpty( _myId ))
             {
@@ -75,19 +77,38 @@ namespace Client.Logic
             {
                 Action= "SHOOT",
                 PlayerId = _myId,
-                RotationShoot = rotationShoot
+                RotationShoot = rotationShoot,
+                PivotX = pivotX,
+                PivotY = pivotY
             };
             string json = JsonSerializer.Serialize(shootMsg) + "\n";
             _connectToServer.SendData(json);
         }
 
-        public List<PlayerDTO> GetPlayers()
+        public List<Player> GetPlayers()
         {
             return _playerList;
         }
         public string GetMyId
         {
             get { return _myId; } 
+        }
+
+        public void SendProfile(float width,float height)
+        {
+            if(string.IsNullOrEmpty( _myId )) return;
+            Console.WriteLine("checkk");
+            Console.WriteLine(width);
+            Console.WriteLine(height);
+            var msg = new
+            {
+                Action = "PROFILE",
+                PlayerId= _myId,
+                Width= width,
+                Height= height
+            };
+            var json =JsonSerializer.Serialize(msg) + "\n";
+            _connectToServer.SendData(json);
         }
 
         public List<Bullet> GetBullets()

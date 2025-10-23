@@ -1,6 +1,6 @@
-﻿using Client.DTO;
-using Client.Logic;
+﻿using Client.Logic;
 using Client.Network;
+using System.Diagnostics;
 using System.Text.Json;
 using System.Windows.Forms;
 
@@ -8,6 +8,8 @@ namespace Client
 {
     public partial class Form1 : Form
     {
+        private CancellationTokenSource _cts;
+
         private ConnectToServer _client;
         private ClientGameService _service;
         private HashSet<Keys> _pressedKeys = new HashSet<Keys>();
@@ -15,6 +17,8 @@ namespace Client
         private Image _playerImage = Properties.Resources.right;
         private float _rotation = 0f;
         private string? _direction = "";
+        private float _pivotX= 0f;
+        private float _pivotY= 0f;
 
         public Form1()
         {
@@ -23,12 +27,6 @@ namespace Client
               ControlStyles.UserPaint |
               ControlStyles.OptimizedDoubleBuffer, true);
             this.UpdateStyles();
-
-            _timer = new System.Windows.Forms.Timer();
-            _timer.Interval = 16; // 60 FPS
-            _timer.Tick += Timer_Tick;
-            _timer.Start();
-
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -36,8 +34,12 @@ namespace Client
             _client = new ConnectToServer();
             _service = new ClientGameService(_client);
 
-            _service.OnPlayerUpdated += players => this.Invalidate();
-            _service.OnBulletUpdated += bullets => this.Invalidate();
+            _service.OnPlayerUpdated += players => { };
+            _service.OnBulletUpdated += bullets => { };
+            _service.OnInitCompleted += () =>
+            {
+                _service.SendProfile(_playerImage.Width, _playerImage.Height);
+            };
             _client.ConnectServer();
 
             this.KeyPreview = true;
@@ -48,16 +50,30 @@ namespace Client
             _moveTimer.Interval = 50; // 20/s
             _moveTimer.Tick += MoveTimer_Tick;
             _moveTimer.Start();
-
         }
 
-        private void Timer_Tick(object sender, EventArgs e)
+        private async void StartGameLoop()
         {
-            this.Invalidate();
+            _cts = new CancellationTokenSource();
+            var sw = new Stopwatch();
+            const int frameTime = 16; // 16ms ~ 60 FPS
+
+            while (!_cts.Token.IsCancellationRequested)
+            {
+                sw.Restart();
+                this.Invalidate();
+
+                var elapsed = (int)sw.ElapsedMilliseconds;
+                int delay = frameTime - elapsed;
+                if (delay > 0)
+                    await Task.Delay(delay);
+            }
         }
-        private void Form1_FormClosed(object sender, FormClosedEventArgs e)
+
+        protected override void OnShown(EventArgs e)
         {
-            _client.DisconnectServer();
+            base.OnShown(e);
+            StartGameLoop();
         }
         private void Form1_KeyDown(object sender, KeyEventArgs e)
         {
@@ -89,7 +105,6 @@ namespace Client
                 }
             }
         }
-
 
         protected override void OnPaint(PaintEventArgs e)
         {
@@ -134,10 +149,9 @@ namespace Client
 
                 g.FillEllipse(Brushes.Yellow, bulletX, bulletY, bulletSize, bulletSize);
                 //  (debug)
-                g.DrawEllipse(Pens.Red, bulletX, bulletY, bulletSize, bulletSize);
+                //g.DrawEllipse(Pens.Red, bulletX, bulletY, bulletSize, bulletSize);
             }
         }
-
 
 
         private void Form1_MouseMove(object sender, MouseEventArgs e)
@@ -145,13 +159,15 @@ namespace Client
             var me = _service.GetPlayers().FirstOrDefault(p => p.Id.ToString() == _service.GetMyId);
             if (me == null) return;
 
+            _pivotX = (me.X + _playerImage.Width / 2 - 20f);
+            _pivotY= (me.Y + _playerImage.Height / 2);
+
             float dx = e.X - (me.X + _playerImage.Width/2-20f);
             float dy = e.Y - (me.Y + _playerImage.Height/2);
 
             _rotation = (float)(Math.Atan2(dy, dx) * 180 / Math.PI);
 
             _service.SendRotation(_rotation);
-            //this.Invalidate();
         }
         private void MoveButtunDown(object sender, MouseEventArgs e)
         {
@@ -162,13 +178,21 @@ namespace Client
                 {
                     Console.WriteLine(me.X); Console.WriteLine(me.Y);
 
-                    Console.WriteLine(me.X + _playerImage.Width / 2);
+                    Console.WriteLine(me.X + _playerImage.Width / 2-20f);
                     Console.WriteLine(me.Y + _playerImage.Height / 2);
                     //Console.WriteLine("checkk");
                     //Console.WriteLine(_rotation + "   " + me.Rotation);
-                    _service.SendShoot(_rotation);
+                    _service.SendShoot(_rotation,_pivotX,_pivotY);
                 }
             }
+        }
+
+
+        private void Form1_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            _cts?.Cancel();
+            _moveTimer?.Stop();
+            _client.DisconnectServer();
         }
 
     }

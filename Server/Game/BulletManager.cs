@@ -1,6 +1,7 @@
 ﻿using Server.Model;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,6 +12,9 @@ namespace Server.Game
     {
         private readonly PlayerManager _playerManager;
         private List<Bullet> _bullets = new List<Bullet>();
+        private float _distanceFromCenter = 70f;
+        private float _speed = 21.022005f;
+        private float _damage = 36f;
         //private List<Player> _players = new List<Player>();
 
         public BulletManager(PlayerManager playerManager)
@@ -22,13 +26,11 @@ namespace Server.Game
         {
             //if(rotationAngle>=0)
             //Console.WriteLine(rotationAngle);
-            Console.WriteLine(player.X);
-            var (offsetX, offsetY) = GetGunOffset(rotationAngle, 70f); // 70f = khoảng cách từ tâm nhân vật đến nòng súng
-            float centerX = player.X + 50;
-            float centerY = player.Y + 35;
+            Console.WriteLine(player.Width);
+            var (offsetX, offsetY) = GetGunOffset(player.X,player.Y,player.Width,player.Height,rotationAngle, _distanceFromCenter); 
 
-            float x = centerX + offsetX;
-            float y = centerY + offsetY;
+            float x = offsetX;
+            float y = offsetY;
 
             var bullet = new Bullet
             {
@@ -37,20 +39,23 @@ namespace Server.Game
                 X = x,
                 Y = y,
                 RotationAngle = rotationAngle,
-                Speed = 25f,
-                Damage = 10.2f
+                Speed = _speed,
+                Damage = _damage
             };
             //Console.WriteLine(bullet.RotationAngle);
             AddBullet(bullet);
-        }
+        }//done
+
         public void AddBullet(Bullet bullet)
         {
             _bullets.Add(bullet);
-        }
+        }//done
+
         public void RemoveBullet(Bullet bullet)
         {
             _bullets.Remove(bullet);
-        }
+        }//done
+
         public void UpdateBullets()
         {
             foreach(var bullet in _bullets.ToList())
@@ -60,10 +65,11 @@ namespace Server.Game
                 foreach (var player in _playerManager.GetAllPlayer())
                 {
                     if (player.Id == bullet.OwnerId) continue;
-                    if (bullet.X>= player.X && bullet.X<= player.X+32 &&  bullet.Y>= player.Y && bullet.Y <= player.Y + 32)
-                    {
-                        Console.WriteLine("nguuuuuu");
+                    var corners = _playerManager.BoxCollider(player.Id.ToString(), player.Width, player.Height);
+                    if (_playerManager.IsPointInPolygon4(corners, new PointF(bullet.X, bullet.Y)))
+                    {    
                         player.Hp -= bullet.Damage;
+                        Console.WriteLine($"Player {player.Id} bi trung dan!");
                         RemoveBullet(bullet);
                         if (player.Hp <= 0)
                         {
@@ -77,18 +83,27 @@ namespace Server.Game
                     RemoveBullet(bullet);
                 }  
             }
-        }
+        }//done
+
         public IEnumerable<Bullet> GetAllBullets()
         {
             return _bullets;
-        }
+        }//done
 
-        private (float offsetX, float offsetY) GetGunOffset(float rotation, float distanceFromCenter)
+        private (float offsetX, float offsetY) GetGunOffset(float x,float y,float width,float height,float rotation, float distanceFromCenter)
         {
+            float pivotx= x + width/2f -20f;
+            float pivoty = y + height / 2f;
+
+            //Console.WriteLine("check pivotxy: "+pivotx+"  "+pivoty);
+
+
             float rad = rotation * (float)Math.PI / 180f;
-            float offsetX = (float)Math.Cos(rad) * distanceFromCenter;
-            float offsetY = (float)Math.Sin(rad) * distanceFromCenter;
+
+            float offsetX = pivotx +(float)Math.Cos(rad) * distanceFromCenter;
+            float offsetY = pivoty+(float)Math.Sin(rad) * distanceFromCenter;
+
             return (offsetX, offsetY);
-        }
+        }//done
     }
 }
