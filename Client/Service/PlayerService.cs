@@ -7,39 +7,42 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace Client.Logic
+namespace Client.Service
 {
-    public  class ClientGameService
+    public  class PlayerService
     {
-
+        private readonly Image _playerImage = Properties.Resources.right;
         private readonly ConnectToServer _connectToServer;
         private List<Player> _playerList = new();
-        private List<Bullet> _bulletList = new();
         private string _myId = "";
+        private float _dashCooldown;
+        private float _ultimateCooldown;
 
         public event Action<List<Player>>? OnPlayerUpdated; 
-        public event Action <List<Bullet>>? OnBulletUpdated;
         public event Action? OnInitCompleted;
+        public event Action<Player>? OnGetMyPlayer;
 
-        public ClientGameService(ConnectToServer connectToServer)
+        public PlayerService(ConnectToServer connectToServer)
         {
             _connectToServer = connectToServer;
             _connectToServer.OnInitReceived += id =>
             {
                 _myId = id;
                 Console.WriteLine("my id: "+ _myId );
-                OnInitCompleted?.Invoke();
+                SendProfile(_playerImage.Width, _playerImage.Height);
+                //OnInitCompleted?.Invoke();
             };
-
             _connectToServer.OnPlayersReceived += players =>
             {
                 _playerList = players;
+                var player = _playerList.FirstOrDefault(p=>p.Id.ToString() == _myId);
+                if (player != null)
+                {
+                    _dashCooldown = player.DashCooldown;
+                    _ultimateCooldown=player.UltimateCooldown;
+                    OnGetMyPlayer?.Invoke(player);
+                }
                 OnPlayerUpdated?.Invoke(_playerList);
-            };
-            _connectToServer.OnBulletReceived += bullets =>
-            {
-                _bulletList = bullets;
-                OnBulletUpdated?.Invoke(_bulletList);
             };
         }
 
@@ -67,24 +70,48 @@ namespace Client.Logic
             string json = JsonSerializer.Serialize(rotationMsg) + "\n";
             _connectToServer.SendData(json);
         }
-        public void SendShoot(float rotationShoot, float pivotX,float pivotY)
+        public void SendDash()
         {
-            if (string.IsNullOrEmpty( _myId ))
+            if (string.IsNullOrEmpty(_myId))
             {
                 return;
             }
-            var shootMsg = new
+            var dashMsg = new
             {
-                Action= "SHOOT",
-                PlayerId = _myId,
-                RotationShoot = rotationShoot,
-                PivotX = pivotX,
-                PivotY = pivotY
+                Action = "DASH",
+                PlayerId = _myId
             };
-            string json = JsonSerializer.Serialize(shootMsg) + "\n";
+            string json = JsonSerializer.Serialize(dashMsg) + "\n";
             _connectToServer.SendData(json);
         }
-
+        public void SendGunReload()
+        {
+            if (string.IsNullOrEmpty(_myId))
+            {
+                return;
+            }
+            var gunreloadMsg = new
+            {
+                Action = "GUNRELOAD",
+                PlayerId = _myId
+            };
+            string json = JsonSerializer.Serialize(gunreloadMsg) + "\n";
+            _connectToServer.SendData(json);
+        }
+        public void SendUltimate()
+        {
+            if (string.IsNullOrEmpty(_myId))
+            {
+                return;
+            }
+            var ultiMsg = new
+            {
+                Action = "ULTIMATE",
+                PlayerId = _myId
+            };
+            string json = JsonSerializer.Serialize(ultiMsg) + "\n";
+            _connectToServer.SendData(json);
+        }
         public List<Player> GetPlayers()
         {
             return _playerList;
@@ -111,9 +138,14 @@ namespace Client.Logic
             _connectToServer.SendData(json);
         }
 
-        public List<Bullet> GetBullets()
+        public float GetDashCooldown
         {
-            return _bulletList;
+            get { return _dashCooldown; }
         }
+        public float GetUltimateCooldown
+        {
+            get { return _ultimateCooldown;}
+        }
+
     }
 }

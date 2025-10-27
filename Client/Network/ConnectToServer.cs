@@ -11,7 +11,7 @@ namespace Client.Network
 {
     public class ConnectToServer
     {
-        private Image _playerImage = Properties.Resources.right;
+        //private Image _playerImage = Properties.Resources.right;
 
         private const string _ipAddress = "127.0.0.1";
         private const int _port = 9000;

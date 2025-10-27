@@ -7,14 +7,14 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace Client.EventHandler
+namespace Client.Service
 {
-    public class BulletHandler
+    public class BulletService
     {
         private readonly ConnectToServer _connectToServer;
         private List<Bullet> _bulletList = new();
         public event Action<List<Bullet>>? OnBulletUpdated;
-        public BulletHandler(ConnectToServer connectToServer)
+        public BulletService(ConnectToServer connectToServer)
         {
             _connectToServer = connectToServer;
 

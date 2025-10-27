@@ -31,7 +31,10 @@ namespace Server.Network
                 Id = Guid.NewGuid(),
                 X = rand.Next(0, 500),
                 Y = rand.Next(0, 500),
-                Hp = 100f
+                Hp = 100f,
+                Rotation = rand.Next(-180, 180),
+                State = PlayerState.Alive,
+                RespawnTime = 5f
             };
         }
 
@@ -93,6 +96,7 @@ namespace Server.Network
                 using var doc = JsonDocument.Parse(json);
                 string action = doc.RootElement.GetProperty("Action").GetString() ?? "";
                 string playerId = doc.RootElement.GetProperty("PlayerId").GetString() ?? "";
+                var player = _playerManager.GetPlayer(playerId);
                 switch (action)
                 {
                     case "PROFILE":
@@ -112,9 +116,8 @@ namespace Server.Network
 
                     case "MOVE":
                         string dir = doc.RootElement.GetProperty("Direction").GetString() ?? "";
-                        //string playerIdMove = doc.RootElement.GetProperty("PlayerId").GetString() ?? "";
                         _playerManager.MovePlayer(playerId, dir);
-                        BroadcastPlayers();
+                       BroadcastPlayers();
                         break;
 
                     case "ROTATION":
@@ -123,9 +126,8 @@ namespace Server.Network
                         {
                             rotation = rotProp.GetSingle();
                         }
-                        //string playerIdRotation = doc.RootElement.GetProperty("PlayerId").GetString() ?? "";
                         _playerManager.RotationPlayer(playerId, rotation);
-                        BroadcastPlayers();
+                       BroadcastPlayers();
                         break;
 
                     case "SHOOT":
@@ -134,13 +136,34 @@ namespace Server.Network
                         {
                             rotationShoot = rotShotProp.GetSingle();
                         }
-                        //string playerIdShoot = doc.RootElement.GetProperty("PlayerId").GetString() ?? "";
                         var playerShoot=_playerManager.GetPlayer(playerId);
                         if (playerShoot != null)
                         {
                             //Console.WriteLine(rotationShoot);
+                            if (!playerShoot.AllowShoot()) return;
                             _bulletManager.CreateBullet(rotationShoot, playerShoot);
                             BroadcastBullet();// done
+                        }
+                        break;
+
+                    case "DASH":
+                        if (player != null)
+                        {
+                            player.StartDash();
+                            BroadcastPlayers();
+                        }
+                        break;
+                    case "GUNRELOAD":
+                        if (player != null)
+                        {
+                            player.GunReload();
+                        }
+                        break;
+                    case "ULTIMATE":
+                        if (player != null)
+                        {
+                            player.StartSkillUltimate();
+                            BroadcastPlayers();
                         }
                         break;
                 }

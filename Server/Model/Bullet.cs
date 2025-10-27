@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,6 +16,8 @@ namespace Server.Model
         public float X { get; set; }
         public float Y { get; set; }
         public float Damage { get; set; } = 10.2f;
+        public float TimeExist { get; set; } = 3.6f;
+        public Stopwatch LifeTimer { get; set; } = Stopwatch.StartNew();
         public void BulletCalculation()
         {
             float rad = (float)(RotationAngle * Math.PI / 180);// tranform deg to rad

@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Text.Json;
 using Server.Game;
+using Server.GameWorld;
 
 namespace Server.Network
 {
@@ -17,13 +18,16 @@ namespace Server.Network
         private readonly List<ClientHandler> _clients = new List<ClientHandler>();
         private readonly PlayerManager _playerManager;
         private readonly BulletManager _bulletManager;
+        private readonly GameLogic _game;
+        private DateTime lastUpdate = DateTime.Now;
 
-        public ServerHost (string ip, int port, PlayerManager playerManager, BulletManager bulletManager)
+        public ServerHost (string ip, int port, PlayerManager playerManager, BulletManager bulletManager,GameLogic gameLogic)
         {
             _ip = ip;
             _port = port;
             _playerManager = playerManager;
             _bulletManager = bulletManager;
+            _game = gameLogic;
         }
 
         public async Task StartAsync()
@@ -49,7 +53,11 @@ namespace Server.Network
         {
             while (true)
             {
-                _bulletManager.UpdateBullets();
+                var now = DateTime.Now;
+                float deltaTime = (float)(now - lastUpdate).TotalSeconds;
+                lastUpdate = now;
+
+                _game.Update(deltaTime);
                 Broadcast(new
                 {
                     Action= "BULLETS",
@@ -60,7 +68,7 @@ namespace Server.Network
                     Action = "PLAYERS",
                     Players = _playerManager.GetAllPlayer()
                 });
-                await Task.Delay(50);
+                await Task.Delay(30);
             }
         }
         public void Broadcast(object message)

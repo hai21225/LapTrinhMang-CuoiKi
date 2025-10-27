@@ -9,7 +9,7 @@ namespace Server.Game
 {
     public class PlayerManager
     {
-        private int _speed = 10;
+        private float _speed = 10;
         private float _offset = 20f;
         private readonly Dictionary<string, Player> _players = new(); // luu moi player kem id, de de dang loia khoi danh sach
 
@@ -54,6 +54,7 @@ namespace Server.Game
         {
             var player= GetPlayer(id);
             if (player == null) return;
+            if (player.IsDashing) return;
             switch (direction.ToUpper())
             {
                 case "UP": player.Y -= _speed; break;
@@ -124,5 +125,6 @@ namespace Server.Game
             } 
             return result; 
         }//done
+
     }
 }
