@@ -4,6 +4,7 @@
     {
         // player
         public Guid Id { get; set; } = Guid.NewGuid();
+        public string Name { get; set; }= string.Empty;
         public  float X { get; set; } // toa do goc trai x =0
         public  float Y { get; set; }// toa do goc trai y=0
         public float Rotation {  get; set; }
@@ -11,24 +12,25 @@
         public int Ammo { get; set; } = 6;
         public float ShootDelay { get; set; } = 0.536f;
         public DateTime LastShootTime { get; set; }
+        public int Score { get; set; } = 0;
 
 
         // dash skill
         public bool IsDashing { get; set; } = false;
         private float _dashForce { get; set; } = 50f;
         private float _timeDuration { get; set; } = 0.36f; // thoi gian ton tai dash
-        private float _dashCooldown { get; set; } = 3.6f;
+        public float DashCooldown { get; set; } = 3.6f;
         private float _dashTimeLeft { get; set; } = 0f;
-        private float _cooldownLeft { get; set; } = 0f;
+        public float DashCooldownLeft { get; set; } = 0f;
         private float _dashDirection { get; set; }
 
         // 
         public bool IsUltimateActive { get; set; } = false;
-        public DateTime UltimateStartFire { get; set; }
-        public float UltimateDuration {  get; set; } = 1f;
+        public float UltimateCooldownLeft { get; set; } = 0f;
+        public float UltimateTimeDurationLeft { get; set; } 
+        private float _ultimateDuration {  get; set; } = 1f;
         public float UltimateFireRate { get; set; } = 0.2f;
         public DateTime LastUltimateFireTime { get; set; }// kiem tra xem khoang cach giua 2 lan xa dan
-        public DateTime LastUltimateTime {  get; set; } = DateTime.Now; // + voi cool down thanh hoi chieu
         public float UltimateCooldown { get; set; } = 10f;
 
         //sprite
@@ -71,22 +73,19 @@
         public void StartDash()
         {
             if (State == PlayerState.Dead) return;
-            if (_cooldownLeft>0f) // chua hoi chieu xong
-            {
-                return;
-            }
+            if (DashCooldownLeft > 0f) return; // chua hoi chieu xong
             if (IsDashing) return; // neu dang dash thi k cho dash nua
 
             IsDashing = true;
             _dashTimeLeft = _timeDuration;
-            _cooldownLeft = _dashCooldown;
+            DashCooldownLeft = DashCooldown;
             _dashDirection = Rotation;
         }// done
         public void DashSkill(float deltaTime)
         {
-            if (_cooldownLeft > 0f)
+            if (DashCooldownLeft > 0f)
             {
-                _cooldownLeft -= deltaTime;
+                DashCooldownLeft -= deltaTime;
             }
             if (IsDashing)
             {
@@ -107,15 +106,13 @@
 
         public void StartSkillUltimate()
         {
-            var now= DateTime.Now;
+            if (State == PlayerState.Dead) return;
+            if (UltimateCooldownLeft > 0f) return;
             if (IsUltimateActive) return;
-            if ((now-LastUltimateTime).TotalSeconds<UltimateCooldown)
-            {
-                return;
-            }
+
             IsUltimateActive = true;
-            LastUltimateTime = now;
-            UltimateStartFire = now;
+            UltimateTimeDurationLeft = _ultimateDuration;
+            UltimateCooldownLeft = UltimateCooldown;
         }
     }
 

@@ -1,9 +1,8 @@
-﻿using System;
+﻿
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
+
 using System.Text.Json;
 using Client.Models;
 
@@ -23,6 +22,8 @@ namespace Client.Network
         public event Action<string>? OnInitReceived; // event nhan tin tu server, sau do gui len winform dder xuw li
         public event Action<List<Player>>? OnPlayersReceived;
         public event Action<List<Bullet>>? OnBulletReceived;
+        public event Action<List<Rank>>? OnRankReceived;
+        public event Action<ChatClient>? OnChatClientReceived;
 
         public bool IsConnected => _client != null && _client.Connected;
 
@@ -95,6 +96,24 @@ namespace Client.Network
                                         //Console.WriteLine(message.Bullets.ToList());
                                         OnBulletReceived?.Invoke(message.Bullets);
                                     }
+                                    break;
+
+                                case "RANK":
+                                    if(message?.Top3 != null)
+                                    {
+                                        OnRankReceived?.Invoke(message.Top3);
+                                    }
+                                    break;
+
+                                case "CHAT":
+                                    string name = doc.RootElement.GetProperty("Name").GetString() ?? "";
+                                    string messagechat = doc.RootElement.GetProperty("Message").GetString() ?? "";
+                                    var chat = new ChatClient
+                                    {
+                                        Name = name,
+                                        Message = messagechat,
+                                    };
+                                    OnChatClientReceived?.Invoke(chat);
                                     break;
                                 default:
                                     Console.WriteLine("Unknown action: " + action);

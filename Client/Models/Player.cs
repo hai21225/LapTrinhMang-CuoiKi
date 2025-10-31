@@ -9,19 +9,18 @@ namespace Client.Models
     public class Player
     {
         public Guid Id { get; set; }
+        public string Name { get; set; }
         public float X { get; set; }
         public float Y { get; set; }
         public float Rotation { get; set; }
         public float Hp { get; set; }
-
         public int Ammo { get; set; }
 
-        public float PivotX { get; set; }
-        public float PivotY { get; set; }
-
         public bool IsDashing { get; set; }
+        public float DashCooldownLeft {  get; set; }
         public float DashCooldown {  get; set; }
         public float UltimateCooldown { get; set; }
+        public float UltimateCooldownLeft { get; set; }
         public bool IsUltimateActive { get; set; }
 
         public PlayerState State { get; set; }

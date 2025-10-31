@@ -13,11 +13,13 @@ namespace Server.Game
         private float _offset = 20f;
         private readonly Dictionary<string, Player> _players = new(); // luu moi player kem id, de de dang loia khoi danh sach
 
-        public void Profile(string id, float width, float height)
+        public void Profile(string id,string name, float width, float height)
         {
             var player = GetPlayer(id);
             if (player != null)
             {
+                Console.WriteLine("da nhan ten "+ name);
+                player.Name = name;
                 player.Width=width;
                 player.Height=height;
             }

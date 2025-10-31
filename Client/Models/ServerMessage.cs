@@ -6,5 +6,6 @@ namespace Client.Models
         public string Action { get; set; } = string.Empty;
         public List<Player>? Players { get; set; }
         public List<Bullet>? Bullets { get; set; }
+        public List<Rank>? Top3 { get; set; }
     }
 }

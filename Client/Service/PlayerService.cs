@@ -1,11 +1,7 @@
 ﻿using Client.Models;
 using Client.Network;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
+
 
 namespace Client.Service
 {
@@ -13,24 +9,22 @@ namespace Client.Service
     {
         private readonly Image _playerImage = Properties.Resources.right;
         private readonly ConnectToServer _connectToServer;
+        private readonly string _playerName;
         private List<Player> _playerList = new();
         private string _myId = "";
-        private float _dashCooldown;
-        private float _ultimateCooldown;
-
         public event Action<List<Player>>? OnPlayerUpdated; 
         public event Action? OnInitCompleted;
         public event Action<Player>? OnGetMyPlayer;
 
-        public PlayerService(ConnectToServer connectToServer)
+        public PlayerService(ConnectToServer connectToServer,string playerName)
         {
             _connectToServer = connectToServer;
+            _playerName = playerName;
             _connectToServer.OnInitReceived += id =>
             {
                 _myId = id;
                 Console.WriteLine("my id: "+ _myId );
                 SendProfile(_playerImage.Width, _playerImage.Height);
-                //OnInitCompleted?.Invoke();
             };
             _connectToServer.OnPlayersReceived += players =>
             {
@@ -38,8 +32,6 @@ namespace Client.Service
                 var player = _playerList.FirstOrDefault(p=>p.Id.ToString() == _myId);
                 if (player != null)
                 {
-                    _dashCooldown = player.DashCooldown;
-                    _ultimateCooldown=player.UltimateCooldown;
                     OnGetMyPlayer?.Invoke(player);
                 }
                 OnPlayerUpdated?.Invoke(_playerList);
@@ -112,6 +104,21 @@ namespace Client.Service
             string json = JsonSerializer.Serialize(ultiMsg) + "\n";
             _connectToServer.SendData(json);
         }
+        public void SendChat(string text)
+        {
+            if (string.IsNullOrEmpty(_myId))
+            {
+                return;
+            }
+            var chatMsg = new
+            {
+                Action = "CHAT",
+                PlayerId= _myId,
+                Message= text
+            };
+            string json = JsonSerializer.Serialize(chatMsg) + "\n";
+            _connectToServer.SendData(json);
+        }
         public List<Player> GetPlayers()
         {
             return _playerList;
@@ -124,27 +131,17 @@ namespace Client.Service
         public void SendProfile(float width,float height)
         {
             if(string.IsNullOrEmpty( _myId )) return;
-            Console.WriteLine("checkk");
-            Console.WriteLine(width);
-            Console.WriteLine(height);
+            Console.WriteLine("checkkkkk"+_playerName);
             var msg = new
             {
                 Action = "PROFILE",
                 PlayerId= _myId,
+                Name=_playerName,
                 Width= width,
                 Height= height
             };
             var json =JsonSerializer.Serialize(msg) + "\n";
             _connectToServer.SendData(json);
-        }
-
-        public float GetDashCooldown
-        {
-            get { return _dashCooldown; }
-        }
-        public float GetUltimateCooldown
-        {
-            get { return _ultimateCooldown;}
         }
 
     }

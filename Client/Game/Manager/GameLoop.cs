@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Diagnostics;
+
 
 namespace Client.Game.Manager
 {
@@ -11,6 +7,7 @@ namespace Client.Game.Manager
     {
         private readonly Form _form;
         private CancellationTokenSource? _cts;
+        private Task? _loopTask;
 
         public GameLoop(Form form)
         {
@@ -20,23 +17,50 @@ namespace Client.Game.Manager
         public void Start()
         {
             _cts = new CancellationTokenSource();
-            Task.Run(() => LoopAsync(_cts.Token));
+            _loopTask =Task.Run(() => LoopAsync(_cts.Token));
         }
         public async Task LoopAsync (CancellationToken token)
         {
             const int frameTime = 24;
             var sw = new Stopwatch();
 
-            while (!token.IsCancellationRequested)
+            try
             {
-                sw.Restart();
-                _form.Invalidate();
+                while (!token.IsCancellationRequested)
+                {
+                    sw.Restart();
 
-                int delay = frameTime - (int)sw.ElapsedMilliseconds;
-                if (delay > 0)
-                    await Task.Delay(delay);
+                    if (!_form.IsDisposed && _form.Created)
+                        _form.Invalidate();
+
+                    int delay = frameTime - (int)sw.ElapsedMilliseconds;
+                    if (delay > 0)
+                        await Task.Delay(delay, token); // truyền token vô luôn
+                }
+            }
+            catch (TaskCanceledException)
+            {
+                // ignore: task stopped bình thường
+            }
+            catch (ObjectDisposedException)
+            {
+                // form bị dispose trong khi loop chạy
             }
         }
-        public void Stop() => _cts?.Cancel();
+
+        public void Stop()
+        {
+            if (_cts != null)
+            {
+                _cts.Cancel();
+                try
+                {
+                    _loopTask?.Wait(1000); // chờ 1s cho task dừng hẳn
+                }
+                catch { }
+                _cts.Dispose();
+                _cts = null;
+            }
+        }
     }
 }

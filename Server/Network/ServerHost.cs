@@ -18,16 +18,18 @@ namespace Server.Network
         private readonly List<ClientHandler> _clients = new List<ClientHandler>();
         private readonly PlayerManager _playerManager;
         private readonly BulletManager _bulletManager;
+        private readonly RankManager _rankManager;
         private readonly GameLogic _game;
         private DateTime lastUpdate = DateTime.Now;
 
-        public ServerHost (string ip, int port, PlayerManager playerManager, BulletManager bulletManager,GameLogic gameLogic)
+        public ServerHost (string ip, int port, PlayerManager playerManager, BulletManager bulletManager,GameLogic gameLogic,RankManager rankManager)
         {
             _ip = ip;
             _port = port;
             _playerManager = playerManager;
             _bulletManager = bulletManager;
             _game = gameLogic;
+            _rankManager = rankManager;
         }
 
         public async Task StartAsync()
@@ -51,6 +53,7 @@ namespace Server.Network
 
         public async Task GameLoopAsync()
         {
+            var lastRankUpdate = DateTime.Now;
             while (true)
             {
                 var now = DateTime.Now;
@@ -68,6 +71,16 @@ namespace Server.Network
                     Action = "PLAYERS",
                     Players = _playerManager.GetAllPlayer()
                 });
+                if ((DateTime.Now - lastRankUpdate).TotalSeconds >= 2)
+                {
+                    lastRankUpdate = DateTime.Now;
+                    _rankManager.UpdateRank();
+                    Broadcast(new
+                    {
+                        Action = "RANK",
+                        Top3 = _rankManager.GetTop3(),
+                    });
+                }
                 await Task.Delay(30);
             }
         }

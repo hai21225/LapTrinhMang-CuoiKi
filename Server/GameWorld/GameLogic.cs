@@ -7,13 +7,15 @@ namespace Server.GameWorld
     {
         private readonly PlayerManager _playerManager;
         private readonly BulletManager _bulletManager;
+        private readonly RankManager _rankManager;
         private Random _random = new Random();
-        private float _screenWidth = 1280;
-        private float _screenHeight = 720;
-        public GameLogic(PlayerManager playerManager, BulletManager bulletManager)
+        private float _screenWidth = 1280*3;
+        private float _screenHeight = 720*3;
+        public GameLogic(PlayerManager playerManager, BulletManager bulletManager, RankManager rankManager)
         {
             _playerManager = playerManager;
             _bulletManager = bulletManager;
+            _rankManager = rankManager;
         }
         public void Update(float deltaTime)
         {
@@ -21,7 +23,7 @@ namespace Server.GameWorld
             HandleRespawn(deltaTime);
             HandleDashSkill(deltaTime);
             CheckPlayer();
-            HandleUltimateSkill();
+            HandleUltimateSkill(deltaTime);
         }
 
         private void HandleCollisions()
@@ -43,6 +45,12 @@ namespace Server.GameWorld
                             if (player.Hp <= 0)
                             {
                                 player.Die();
+                                var enemy = _playerManager.GetPlayer(bullet.OwnerId.ToString());
+                                if (enemy != null)
+                                {
+                                   // Console.WriteLine(enemy.Id+" tang diem");
+                                    enemy.Score+=10;
+                                }
                             }
                             _bulletManager.RemoveBullet(bullet);
                             break;
@@ -97,20 +105,26 @@ namespace Server.GameWorld
             }
         }
 
-        private void HandleUltimateSkill()
+        private void HandleUltimateSkill(float deltatime)
         {
             var now = DateTime.Now;
             foreach (var player in _playerManager.GetAllPlayer())
             {
-                if (!player.IsUltimateActive) continue;
-
-                // Nếu đã hết thời gian duy trì, tắt ultimate
-                if ((now - player.UltimateStartFire).TotalSeconds >= player.UltimateDuration)
+                if (player.UltimateCooldownLeft > 0f)
                 {
-                    player.IsUltimateActive = false;
-                    continue;
+                    player.UltimateCooldownLeft -= deltatime;
                 }
 
+                if (!player.IsUltimateActive) continue;
+
+                if (player.UltimateTimeDurationLeft > 0f)
+                {
+                    player.UltimateTimeDurationLeft -= deltatime;
+                    if (player.UltimateTimeDurationLeft < 0f)
+                    {
+                        player.IsUltimateActive = false;
+                    }
+                }
                 // Kiểm tra nếu đã đến lúc bắn tiếp theo
                 if ((now - player.LastUltimateFireTime).TotalSeconds >= player.UltimateFireRate)
                 {
@@ -128,5 +142,7 @@ namespace Server.GameWorld
                 }
             }
         }
+
+
     }
 }

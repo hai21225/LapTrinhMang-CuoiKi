@@ -111,7 +111,8 @@ namespace Server.Network
                         {
                             height = hProp.GetSingle();
                         }
-                        _playerManager.Profile(playerId,width,height);
+                        string name = doc.RootElement.GetProperty("Name").ToString() ?? "";
+                        _playerManager.Profile(playerId,name,width,height);
                         break;
 
                     case "MOVE":
@@ -166,6 +167,13 @@ namespace Server.Network
                             BroadcastPlayers();
                         }
                         break;
+                    case "CHAT":
+                        if(player != null)
+                        {
+                            string message= doc.RootElement.GetProperty("Message").GetString() ?? "";
+                            BroadcastMessage(player.Name, message);
+                        }
+                        break;
                 }
             }
             catch (Exception ex)
@@ -182,7 +190,15 @@ namespace Server.Network
                 Players = _playerManager.GetAllPlayer()
             });
         }
-
+        private void BroadcastMessage(string name,string msg)
+        {
+            _server.Broadcast(new
+            {
+                Action="CHAT",
+                Name= name,
+                Message = msg
+            });
+        }
         private void BroadcastBullet()
         {
             _server.Broadcast(new
