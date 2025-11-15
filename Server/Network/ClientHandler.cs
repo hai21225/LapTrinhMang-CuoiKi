@@ -118,7 +118,7 @@ namespace Server.Network
                     case "MOVE":
                         string dir = doc.RootElement.GetProperty("Direction").GetString() ?? "";
                         _playerManager.MovePlayer(playerId, dir);
-                       BroadcastPlayers();
+                       //BroadcastPlayers();
                         break;
 
                     case "ROTATION":
@@ -128,7 +128,7 @@ namespace Server.Network
                             rotation = rotProp.GetSingle();
                         }
                         _playerManager.RotationPlayer(playerId, rotation);
-                       BroadcastPlayers();
+                       //BroadcastPlayers();
                         break;
 
                     case "SHOOT":
@@ -143,7 +143,7 @@ namespace Server.Network
                             //Console.WriteLine(rotationShoot);
                             if (!playerShoot.AllowShoot()) return;
                             _bulletManager.CreateBullet(rotationShoot, playerShoot);
-                            BroadcastBullet();// done
+                            //BroadcastBullet();// done
                         }
                         break;
 
@@ -151,22 +151,25 @@ namespace Server.Network
                         if (player != null)
                         {
                             player.StartDash();
-                            BroadcastPlayers();
+                            //BroadcastPlayers();
                         }
                         break;
+
                     case "GUNRELOAD":
                         if (player != null)
                         {
                             player.GunReload();
                         }
                         break;
+
                     case "ULTIMATE":
                         if (player != null)
                         {
                             player.StartSkillUltimate();
-                            BroadcastPlayers();
+                            //BroadcastPlayers();
                         }
                         break;
+
                     case "CHAT":
                         if(player != null)
                         {

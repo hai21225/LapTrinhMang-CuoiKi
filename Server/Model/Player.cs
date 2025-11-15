@@ -29,7 +29,7 @@
         public float UltimateCooldownLeft { get; set; } = 0f;
         public float UltimateTimeDurationLeft { get; set; } 
         private float _ultimateDuration {  get; set; } = 1f;
-        public float UltimateFireRate { get; set; } = 0.2f;
+        public float UltimateFireRate { get; set; } = 0.2f; //0.2f
         public DateTime LastUltimateFireTime { get; set; }// kiem tra xem khoang cach giua 2 lan xa dan
         public float UltimateCooldown { get; set; } = 10f;
 

@@ -13,7 +13,6 @@ namespace Client.Service
         private List<Player> _playerList = new();
         private string _myId = "";
         public event Action<List<Player>>? OnPlayerUpdated; 
-        public event Action? OnInitCompleted;
         public event Action<Player>? OnGetMyPlayer;
 
         public PlayerService(ConnectToServer connectToServer,string playerName)

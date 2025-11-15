@@ -37,7 +37,7 @@
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = SystemColors.ControlDarkDark;
-            ClientSize = new Size(1280, 720);
+            ClientSize = new Size(1280, 720); // 1280, 720
             this.FormBorderStyle = FormBorderStyle.FixedSingle; // không cho kéo dãn
             this.MaximizeBox = false; // tắt nút phóng to
             this.MinimizeBox = true;  // nếu muốn vẫn cho thu nhỏ thì để true

@@ -43,7 +43,8 @@ namespace Client
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            _client = new ConnectToServer();
+            var config = GameConfig.Load();
+            _client = new ConnectToServer(config.ServerIp,config.Port);
             _pService = new PlayerService(_client,_playerName);
             _bService = new BulletService(_client);
             _rankService = new RankService(_client);
@@ -60,7 +61,7 @@ namespace Client
             _game = new GameLoop(this);
 
             _client.ConnectServer();
-            //SoundManager.PlayBackground("*/Sounds/Boss.wav");
+            //SoundManager.PlayBackground(@"Sounds\Background.mp3");
             _game.Start();
             Console.WriteLine(_playerName);
         }
@@ -75,7 +76,7 @@ namespace Client
         private void Form1_FormClosed(object sender, FormClosedEventArgs e)
         {
             _game?.Stop();
-            SoundManager.StopBackground();
+            //SoundManager.StopBackground();
             _client?.DisconnectServer();
             Application.Exit();
         }

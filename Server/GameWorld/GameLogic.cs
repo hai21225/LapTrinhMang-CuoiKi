@@ -128,7 +128,7 @@ namespace Server.GameWorld
                 // Kiểm tra nếu đã đến lúc bắn tiếp theo
                 if ((now - player.LastUltimateFireTime).TotalSeconds >= player.UltimateFireRate)
                 {
-                    int bulletCount = 5;
+                    int bulletCount = 5; //5
                     float spreadAngle = 60f;
                     float startAngle = player.Rotation - spreadAngle / 2;
 

@@ -21,7 +21,7 @@ namespace Client.Game.Manager
         }
         public async Task LoopAsync (CancellationToken token)
         {
-            const int frameTime = 24;
+            const int frameTime = 16;
             var sw = new Stopwatch();
 
             try

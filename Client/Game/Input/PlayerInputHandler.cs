@@ -119,7 +119,7 @@ namespace Client.Game.Input
 
         private void OnMouseMove(object sender, MouseEventArgs e)
         {
-            if (_me == null || _me.State == PlayerState.Dead || _me.IsDashing|| _me.IsUltimateActive) return;
+            if (_me == null || _me.State == PlayerState.Dead || _me.IsDashing) return;
 
             var worldMouse = _camera.ScreenToWorld(e.X, e.Y);
 
@@ -139,7 +139,7 @@ namespace Client.Game.Input
             if (e.Button == MouseButtons.Left)
             {
                 _bullet.SendShoot(_me.Id.ToString(), _rotation);
-                //SoundManager.ShootEffect("D:\\LapTrinhMang\\CuoiKi\\GameHayNhatTheGioi\\Client\\Sounds\\GunShot.wav");
+                //SoundManager.PlayEffect("D:\\LapTrinhMang\\CuoiKi\\GameHayNhatTheGioi\\Client\\Sounds\\GunShot.mp3");
             }
         }
 

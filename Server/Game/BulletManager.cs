@@ -41,7 +41,7 @@ namespace Server.Game
             AddBullet(bullet);
         }//done
 
-        public void AddBullet(Bullet bullet)
+        private void AddBullet(Bullet bullet)
         {
             _bullets.Add(bullet);
         }//done

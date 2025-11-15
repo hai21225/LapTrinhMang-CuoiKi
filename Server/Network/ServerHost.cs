@@ -20,7 +20,7 @@ namespace Server.Network
         private readonly BulletManager _bulletManager;
         private readonly RankManager _rankManager;
         private readonly GameLogic _game;
-        private DateTime lastUpdate = DateTime.Now;
+        private DateTime _lastUpdate = DateTime.Now;
 
         public ServerHost (string ip, int port, PlayerManager playerManager, BulletManager bulletManager,GameLogic gameLogic,RankManager rankManager)
         {
@@ -47,7 +47,8 @@ namespace Server.Network
                 Socket client = await listener.AcceptAsync();
                 var handler = new ClientHandler(client, this,_playerManager,_bulletManager);// this 
                 _clients.Add(handler);
-                _ = handler.StartListeningAsync();
+                _ = Task.Run(() => handler.StartListeningAsync());
+                //_ = handler.StartListeningAsync();
             }
         }
 
@@ -57,8 +58,8 @@ namespace Server.Network
             while (true)
             {
                 var now = DateTime.Now;
-                float deltaTime = (float)(now - lastUpdate).TotalSeconds;
-                lastUpdate = now;
+                float deltaTime = (float)(now - _lastUpdate).TotalSeconds;
+                _lastUpdate = now;
 
                 _game.Update(deltaTime);
                 Broadcast(new
