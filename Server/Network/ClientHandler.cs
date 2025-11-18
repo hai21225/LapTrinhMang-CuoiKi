@@ -1,4 +1,5 @@
-﻿using Server.Game;
+﻿using Server.DTO;
+using Server.Game;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,16 +16,14 @@ namespace Server.Network
         private readonly ServerHost _server;
         private readonly StringBuilder _recvBuffer = new StringBuilder();
         private readonly PlayerManager _playerManager;
-        private readonly BulletManager _bulletManager;
         public Player Player { get; private set; }
         private Random rand = new Random();
 
-        public ClientHandler (Socket client, ServerHost server,PlayerManager playerManager,BulletManager bulletManager)
+        public ClientHandler (Socket client, ServerHost server,PlayerManager playerManager)
         {
             _client = client;
             _server = server;
             _playerManager = playerManager;
-            _bulletManager = bulletManager;
 
             Player = new Player
             {
@@ -49,7 +48,6 @@ namespace Server.Network
                     PlayerId = Player.Id
                 });
                 _playerManager.AddPlayer(Player);
-                BroadcastPlayers();
 
                 byte[] buffer = new byte[1024];
                 while (_client.Connected)
@@ -84,7 +82,6 @@ namespace Server.Network
                 _server.RemoveClient(this);
                 _playerManager.RemovePlayer(Player.Id.ToString());
                 Console.WriteLine("client thoat");
-                BroadcastPlayers();
                 _client.Close();
             }
         }
@@ -93,90 +90,10 @@ namespace Server.Network
         {
             try
             {
-                using var doc = JsonDocument.Parse(json);
-                string action = doc.RootElement.GetProperty("Action").GetString() ?? "";
-                string playerId = doc.RootElement.GetProperty("PlayerId").GetString() ?? "";
-                var player = _playerManager.GetPlayer(playerId);
-                switch (action)
+                var action = JsonSerializer.Deserialize<ClientAction>(json);
+                if (action!= null)
                 {
-                    case "PROFILE":
-                        Console.WriteLine("check");
-                        float width = 0;
-                        float height= 0;
-                        if (doc.RootElement.TryGetProperty("Width", out var wProp))
-                        {
-                            width = wProp.GetSingle();
-                        }
-                        if (doc.RootElement.TryGetProperty("Height", out var hProp))
-                        {
-                            height = hProp.GetSingle();
-                        }
-                        string name = doc.RootElement.GetProperty("Name").ToString() ?? "";
-                        _playerManager.Profile(playerId,name,width,height);
-                        break;
-
-                    case "MOVE":
-                        string dir = doc.RootElement.GetProperty("Direction").GetString() ?? "";
-                        _playerManager.MovePlayer(playerId, dir);
-                       //BroadcastPlayers();
-                        break;
-
-                    case "ROTATION":
-                        float rotation = 0f;
-                        if (doc.RootElement.TryGetProperty("Rotation", out var rotProp))
-                        {
-                            rotation = rotProp.GetSingle();
-                        }
-                        _playerManager.RotationPlayer(playerId, rotation);
-                       //BroadcastPlayers();
-                        break;
-
-                    case "SHOOT":
-                        float rotationShoot = 0f;
-                        if (doc.RootElement.TryGetProperty("RotationShoot", out var rotShotProp))
-                        {
-                            rotationShoot = rotShotProp.GetSingle();
-                        }
-                        var playerShoot=_playerManager.GetPlayer(playerId);
-                        if (playerShoot != null)
-                        {
-                            //Console.WriteLine(rotationShoot);
-                            if (!playerShoot.AllowShoot()) return;
-                            _bulletManager.CreateBullet(rotationShoot, playerShoot);
-                            //BroadcastBullet();// done
-                        }
-                        break;
-
-                    case "DASH":
-                        if (player != null)
-                        {
-                            player.StartDash();
-                            //BroadcastPlayers();
-                        }
-                        break;
-
-                    case "GUNRELOAD":
-                        if (player != null)
-                        {
-                            player.GunReload();
-                        }
-                        break;
-
-                    case "ULTIMATE":
-                        if (player != null)
-                        {
-                            player.StartSkillUltimate();
-                            //BroadcastPlayers();
-                        }
-                        break;
-
-                    case "CHAT":
-                        if(player != null)
-                        {
-                            string message= doc.RootElement.GetProperty("Message").GetString() ?? "";
-                            BroadcastMessage(player.Name, message);
-                        }
-                        break;
+                    _server.SetActionQueue(action);
                 }
             }
             catch (Exception ex)
@@ -184,33 +101,6 @@ namespace Server.Network
                 Console.WriteLine($"Parse error: {ex.Message}");
             }
         }
-
-        private void BroadcastPlayers()
-        {
-            _server.Broadcast(new
-            {
-                Action = "PLAYERS",
-                Players = _playerManager.GetAllPlayer()
-            });
-        }
-        private void BroadcastMessage(string name,string msg)
-        {
-            _server.Broadcast(new
-            {
-                Action="CHAT",
-                Name= name,
-                Message = msg
-            });
-        }
-        private void BroadcastBullet()
-        {
-            _server.Broadcast(new
-            {
-                Action = "BULLETS",
-                Bullets = _bulletManager.GetAllBullets()
-            });
-        }
-
         public void Send(byte[] data)
         {
             _client.Send(data);
@@ -222,5 +112,6 @@ namespace Server.Network
             byte[] data = Encoding.UTF8.GetBytes(json);
             await _client.SendAsync(data, SocketFlags.None);
         }
+
     }
 }

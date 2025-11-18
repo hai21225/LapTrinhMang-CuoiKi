@@ -114,7 +114,7 @@ namespace Client.Game.Renderer
             }
             foreach (var p in _client.GetPlayers())
             {
-                if (p.State == PlayerState.Alive) return;
+                if (p.State == PlayerState.Alive) continue;
                 var pos = _camera.WorldToScreen(p.X, p.Y);
                 g.DrawImage(_playerDead, pos.X, pos.Y, _playerDead.Width, _playerDead.Height);
             }

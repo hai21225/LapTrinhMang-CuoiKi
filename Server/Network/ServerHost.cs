@@ -8,6 +8,9 @@ using System.Threading.Tasks;
 using System.Text.Json;
 using Server.Game;
 using Server.GameWorld;
+using System.Collections.Concurrent;
+using Server.DTO;
+using System.Xml.Linq;
 
 namespace Server.Network
 {
@@ -21,6 +24,8 @@ namespace Server.Network
         private readonly RankManager _rankManager;
         private readonly GameLogic _game;
         private DateTime _lastUpdate = DateTime.Now;
+        private readonly ConcurrentQueue<ClientAction> _actionQueue = new ConcurrentQueue<ClientAction>();
+        
 
         public ServerHost (string ip, int port, PlayerManager playerManager, BulletManager bulletManager,GameLogic gameLogic,RankManager rankManager)
         {
@@ -45,10 +50,10 @@ namespace Server.Network
             while (true)
             {
                 Socket client = await listener.AcceptAsync();
-                var handler = new ClientHandler(client, this,_playerManager,_bulletManager);// this 
+                var handler = new ClientHandler(client, this,_playerManager);// this 
                 _clients.Add(handler);
-                _ = Task.Run(() => handler.StartListeningAsync());
-                //_ = handler.StartListeningAsync();
+                //_ = Task.Run(() => handler.StartListeningAsync());
+                _ = handler.StartListeningAsync();
             }
         }
 
@@ -61,6 +66,7 @@ namespace Server.Network
                 float deltaTime = (float)(now - _lastUpdate).TotalSeconds;
                 _lastUpdate = now;
 
+                ProcessQueue();
                 _game.Update(deltaTime);
                 Broadcast(new
                 {
@@ -109,5 +115,56 @@ namespace Server.Network
         {
             _clients.Remove(client);
         }
+
+        public void SetActionQueue(ClientAction json)
+        {
+            _actionQueue.Enqueue(json);
+        }
+
+
+        private void ProcessQueue()
+        {
+            while (_actionQueue.TryDequeue(out var action))
+            {
+                var player = _playerManager.GetPlayer(action.PlayerId);
+                switch(action.Action)
+                {
+                    case "PROFILE":
+                        _playerManager.Profile(action.PlayerId, action.Name, action.Width, action.Height);
+                        break;
+                    case "MOVE":
+                        if (player != null)
+                            _playerManager.MovePlayer(action.PlayerId, action.Direction);
+                        break;
+                    case "ROTATION":
+                        if (player != null)
+                            _playerManager.RotationPlayer(action.PlayerId, action.Rotation);
+                        break;
+                    case "SHOOT":
+                        if (player != null && player.AllowShoot())
+                            _bulletManager.CreateBullet(action.RotationShoot, player);
+                        break;
+                    case "DASH":
+                        player?.StartDash();
+                        break;
+                    case "GUNRELOAD":
+                        player?.GunReload();
+                        break;
+                    case "ULTIMATE":
+                        player?.StartSkillUltimate();
+                        break;
+                    case "CHAT":
+                        if (player != null)
+                            Broadcast(new
+                            {
+                                Action = "CHAT",
+                                Name = action.Name,
+                                Message = action.Message
+                            });
+                        break;
+                }
+            }
+        }
+
     }
 }

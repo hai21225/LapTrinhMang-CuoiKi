@@ -79,67 +79,12 @@ namespace Client.Network
 
                         if (string.IsNullOrWhiteSpace(line)) continue;
                         _messageQueue.Enqueue(line);
-                        //try
-                        //{
-                        //    using var doc = JsonDocument.Parse(line);
-                        //    if (!doc.RootElement.TryGetProperty("Action", out var actionProp))
-                        //        continue;
-
-                        //    string action = actionProp.GetString() ?? "";
-                        //    var message = JsonSerializer.Deserialize<ServerMessage>(line);
-                        //    switch (action)
-                        //    {
-                        //        case "INIT":
-                        //            string playerId = doc.RootElement.GetProperty("PlayerId").GetString() ?? "";
-                        //            OnInitReceived?.Invoke(playerId);
-                        //            break;
-
-                        //        case "PLAYERS":
-                        //            // var message = JsonSerializer.Deserialize<ServerMessage>(line);
-                        //            if (message?.Players != null)
-                        //                OnPlayersReceived?.Invoke(message.Players);
-                        //            break;
-                        //        case "BULLETS":
-                        //            //var msgBullet= JsonSerializer.Deserialize<ServerMessage>(line);
-                        //            if (message?.Bullets != null)
-                        //            {
-                        //                //Console.WriteLine(message.Bullets.ToList());
-                        //                OnBulletReceived?.Invoke(message.Bullets);
-                        //            }
-                        //            break;
-
-                        //        case "RANK":
-                        //            if(message?.Top3 != null)
-                        //            {
-                        //                OnRankReceived?.Invoke(message.Top3);
-                        //            }
-                        //            break;
-
-                        //        case "CHAT":
-                        //            string name = doc.RootElement.GetProperty("Name").GetString() ?? "";
-                        //            string messagechat = doc.RootElement.GetProperty("Message").GetString() ?? "";
-                        //            var chat = new ChatClient
-                        //            {
-                        //                Name = name,
-                        //                Message = messagechat,
-                        //            };
-                        //            OnChatClientReceived?.Invoke(chat);
-                        //            break;
-                        //        default:
-                        //            Console.WriteLine("Unknown action: " + action);
-                        //            break;
-                        //    }
-                        //}
-                        //catch (Exception ex)
-                        //{
-                        //    Console.WriteLine("Parse error: " + ex.Message);
-                        //}
                     }
                 }
             }
-            catch (SocketException sex)
+            catch (SocketException ex)
             {
-                Console.WriteLine($"loi socket: {sex.Message}");
+                Console.WriteLine($"loi socket: {ex.Message}");
             }
             catch (Exception ex)
             {

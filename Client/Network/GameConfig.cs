@@ -7,7 +7,14 @@ public class GameConfig
 
     public static GameConfig Load(string path = "Config.json")
     {
-        string json = File.ReadAllText(path);
-        return JsonSerializer.Deserialize<GameConfig>(json) ?? new GameConfig();
+        if (!File.Exists(path))
+        {
+            var defaultConfig = new GameConfig();
+            string json = JsonSerializer.Serialize(defaultConfig, new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(path, json);
+            return defaultConfig;
+        }
+        string fileContent = File.ReadAllText(path);
+        return JsonSerializer.Deserialize<GameConfig>(fileContent) ?? new GameConfig();
     }
 }
